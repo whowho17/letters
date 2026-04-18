@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>The Ephemeral Archive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=DM+Sans:wght@200;300;400&family=Playfair+Display:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --ink:         #2a2118;
+  --ink-soft:    #5a4e42;
+  --ink-faint:   #9a8c80;
+  --parchment:   #faf7f0;
+  --cream:       #f3ede0;
+  --linen:       #e8dece;
+  --blush:       #f0dcd8;
+  --blush-deep:  #d9b8b2;
+  --gold:        #b89a6a;
+  --gold-light:  #d4b88a;
+  --sage:        #9aab94;
+  --ease-slow:    cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-elegant: cubic-bezier(0.16, 1, 0.3, 1);
+  --sh-paper: 0 2px 12px rgba(42,33,24,0.06), 0 8px 32px rgba(42,33,24,0.04);
+  --sh-lift:  0 4px 24px rgba(42,33,24,0.10), 0 16px 48px rgba(42,33,24,0.06);
+  --sh-float: 0 8px 40px rgba(42,33,24,0.14), 0 24px 64px rgba(42,33,24,0.08);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--parchment); color: var(--ink);
+  font-family: 'DM Sans', sans-serif; font-weight: 300;
+  min-height: 100vh; overflow-x: hidden; -webkit-font-smoothing: antialiased;
+}
+body::after {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9999; opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 200px;
+}
+
+/* ── Screens ── */
+.screen { display: none; min-height: 100vh; flex-direction: column; }
+.screen.active { display: flex; }
+
+/* ── Typography ── */
+.t-display { font-family: 'Cormorant Garamond', serif; font-weight: 300; line-height: 1.08; letter-spacing: -0.02em; }
+
+/* ── Animations ── */
+@keyframes fadeUp  { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeIn  { from{opacity:0} to{opacity:1} }
+@keyframes floatY  { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
+@keyframes pulseDot{ 0%,100%{opacity:1} 50%{opacity:0.35} }
+@keyframes scaleIn { from{opacity:0;transform:scale(0.93)} to{opacity:1;transform:scale(1)} }
+@keyframes slideUp { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
+
+.fu { animation: fadeUp 0.9s var(--ease-elegant) forwards; opacity: 0; }
+.fi { animation: fadeIn 0.9s var(--ease-slow) forwards; opacity: 0; }
+.d1{animation-delay:0.1s} .d2{animation-delay:0.25s}
+.d3{animation-delay:0.4s} .d4{animation-delay:0.55s} .d5{animation-delay:0.8s}
+
+/* ── Paper ── */
+.paper {
+  background: #fff;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)' opacity='0.016'/%3E%3C/svg%3E");
+  border: 1px solid rgba(232,222,206,0.8); box-shadow: var(--sh-paper);
+}
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 9px;
+  font-family: 'DM Sans', sans-serif; font-weight: 400;
+  font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase;
+  border-radius: 9999px; cursor: pointer;
+  transition: all 0.35s var(--ease-slow); border: none; outline: none;
+  white-space: nowrap;
+}
+.btn-primary { background: var(--blush); color: var(--ink-soft); padding: 13px 30px; border: 1px solid rgba(217,184,178,0.5); box-shadow: 0 2px 12px rgba(217,184,178,0.22); }
+.btn-primary:hover { background: var(--blush-deep); color: var(--ink); transform: translateY(-1px); box-shadow: 0 5px 22px rgba(217,184,178,0.38); }
+.btn-ghost { background: transparent; color: var(--ink-faint); padding: 11px 22px; border: 1px solid var(--linen); }
+.btn-ghost:hover { color: var(--ink-soft); border-color: var(--blush-deep); background: rgba(240,220,216,0.1); }
+.btn-dark { background: var(--ink); color: var(--parchment); padding: 14px 34px; box-shadow: 0 2px 16px rgba(42,33,24,0.18); }
+.btn-dark:hover { background: var(--ink-soft); transform: translateY(-1px); box-shadow: 0 5px 26px rgba(42,33,24,0.22); }
+.btn:active { transform: translateY(0) !important; }
+
+/* ── Nav ── */
+nav#main-nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 300;
+  height: 68px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 52px;
+  background: rgba(250,247,240,0.86); backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(42,33,24,0.04);
+  transition: opacity 0.4s;
+}
+nav#main-nav.hidden-nav { display: none; }
+.nav-brand { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:1.3rem; color:var(--gold); cursor:pointer; transition:opacity 0.3s; }
+.nav-brand:hover { opacity:0.75; }
+.nav-links { display:flex; gap:36px; }
+.nav-link { font-size:0.8rem; letter-spacing:0.07em; color:var(--ink-faint); cursor:pointer; padding-bottom:2px; border-bottom:1px solid transparent; transition:color 0.35s, border-color 0.35s; }
+.nav-link:hover { color:var(--ink-soft); }
+.nav-link.active { color:var(--ink-soft); border-bottom-color:var(--blush-deep); }
+
+/* ── Scroll reveal ── */
+.sr { opacity:0; transform:translateY(20px); transition: opacity 0.8s var(--ease-elegant), transform 0.8s var(--ease-elegant); }
+.sr.vis { opacity:1; transform:translateY(0); }
+
+/* ═══════════════════════════════════
+   LANDING
+═══════════════════════════════════ */
+#screen-landing { padding-top:68px; background:var(--parchment); }
+
+.hero { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:88px 40px 72px; position:relative; overflow:hidden; }
+.hero-glow { position:absolute; border-radius:50%; pointer-events:none; filter:blur(72px); }
+.g1 { width:520px; height:520px; background:rgba(240,220,216,0.38); top:-100px; left:50%; transform:translateX(-55%); }
+.g2 { width:280px; height:280px; background:rgba(221,214,232,0.22); bottom:20px; right:5%; }
+.g3 { width:180px; height:180px; background:rgba(184,154,106,0.1); bottom:40px; left:8%; }
+
+.hero-eyebrow { font-size:0.625rem; letter-spacing:0.22em; color:var(--gold); text-transform:uppercase; margin-bottom:26px; }
+.hero-title { font-size:clamp(3rem,7.5vw,6.5rem); color:var(--ink); max-width:860px; margin-bottom:28px; }
+.hero-title em { font-style:italic; color:var(--gold); }
+.hero-sub { font-size:1rem; line-height:1.85; color:var(--ink-faint); max-width:420px; margin-bottom:48px; }
+.hero-cta { display:flex; gap:16px; align-items:center; flex-wrap:wrap; justify-content:center; margin-bottom:72px; }
+.hero-scroll { display:flex;flex-direction:column;align-items:center;gap:8px; font-size:0.6rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--ink-faint); animation:floatY 3.2s ease-in-out infinite; }
+.hero-scroll::after { content:''; width:1px; height:28px; background:var(--linen); }
+
+.features { display:grid; grid-template-columns:repeat(3,1fr); border-top:1px solid var(--linen); border-bottom:1px solid var(--linen); background:var(--cream); }
+.feat { padding:48px 44px; border-right:1px solid var(--linen); transition:background 0.4s; }
+.feat:last-child { border-right:none; }
+.feat:hover { background:rgba(255,255,255,0.55); }
+.feat-icon { width:30px;height:30px;background:var(--blush);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:0.75rem;margin-bottom:16px; }
+.feat-title { font-family:'Playfair Display',serif;font-size:1.05rem;color:var(--ink);margin-bottom:10px; }
+.feat-desc { font-size:0.85rem;line-height:1.72;color:var(--ink-faint); }
+
+.teaser { display:flex;gap:72px;align-items:center;max-width:1080px;margin:0 auto;padding:88px 52px;width:100%; }
+.teaser-text { flex:1; }
+.teaser-text h2 { font-family:'Cormorant Garamond',serif;font-size:2.75rem;font-weight:300;line-height:1.14;color:var(--ink);margin-bottom:18px; }
+.teaser-text p { font-size:0.9rem;line-height:1.82;color:var(--ink-faint);max-width:360px;margin-bottom:28px; }
+.teaser-card { flex:1;border-radius:24px;padding:38px 42px;min-height:340px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(240,220,216,0.45) 0%,rgba(255,255,255,0.15) 100%); }
+.tc-date { font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:22px; }
+.tc-sal  { font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-style:italic;color:var(--ink);margin-bottom:16px; }
+.tc-body { font-family:'Cormorant Garamond',serif;font-size:1rem;line-height:1.9;color:var(--ink-soft); }
+.tc-sig  { font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.125rem;color:var(--ink);margin-top:28px; }
+
+.site-footer { border-top:1px solid var(--linen);padding:36px 52px;display:flex;justify-content:space-between;align-items:center;background:var(--cream); }
+.footer-brand { font-family:'Cormorant Garamond',serif;font-style:italic;font-size:0.95rem;color:var(--gold); }
+.footer-links { display:flex;gap:28px; }
+.footer-link { font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-faint);cursor:pointer;transition:color 0.3s; }
+.footer-link:hover { color:var(--ink-soft); }
+.footer-copy { font-size:0.625rem;letter-spacing:0.08em;color:var(--ink-faint);opacity:0.55; }
+
+/* ═══════════════════════════════════
+   COMPOSE
+═══════════════════════════════════ */
+#screen-compose { padding-top:68px; background:var(--parchment); }
+.compose-wrap { flex:1;display:flex;flex-direction:column;align-items:center;padding:60px 40px 140px;max-width:780px;margin:0 auto;width:100%; }
+.compose-head { text-align:center;margin-bottom:44px; }
+.compose-head h1 { font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:300;color:var(--ink);margin-bottom:8px; }
+.compose-head p { font-size:0.85rem;color:var(--ink-faint);letter-spacing:0.04em; }
+.prompts { display:flex;gap:9px;flex-wrap:wrap;justify-content:center;margin-bottom:36px; }
+.prompt-chip { padding:7px 16px;border-radius:9999px;background:var(--cream);border:1px solid var(--linen);font-size:0.8rem;color:var(--ink-soft);cursor:pointer;transition:all 0.3s var(--ease-slow); }
+.prompt-chip:hover { background:var(--blush);border-color:var(--blush-deep);color:var(--ink); }
+
+.writing-canvas { width:100%;border-radius:24px;padding:48px 60px 36px; }
+.canvas-meta { display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;padding-bottom:22px;border-bottom:1px solid rgba(232,222,206,0.65); }
+.canvas-date { font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-faint); }
+.draft-pill { display:flex;align-items:center;gap:6px;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--sage); }
+.draft-dot { width:5px;height:5px;border-radius:50%;background:var(--sage);animation:pulseDot 2.5s ease-in-out infinite; }
+textarea.f-title { width:100%;background:transparent;border:none;outline:none;resize:none;overflow:hidden;font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:300;color:var(--ink);line-height:1.22;margin-bottom:24px; }
+textarea.f-title::placeholder { color:rgba(42,33,24,0.18); }
+textarea.f-body { width:100%;min-height:300px;background:transparent;border:none;outline:none;resize:none;font-family:'Cormorant Garamond',serif;font-size:1.125rem;line-height:1.95;color:var(--ink-soft);letter-spacing:0.01em; }
+textarea.f-body::placeholder { color:rgba(42,33,24,0.2); }
+.canvas-foot { display:flex;justify-content:space-between;align-items:center;margin-top:28px;padding-top:22px;border-top:1px solid rgba(232,222,206,0.65); }
+.word-count { font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-faint); }
+.compose-actions { display:flex;justify-content:space-between;align-items:center;margin-top:36px;width:100%; }
+
+/* ═══════════════════════════════════
+   SEAL MODAL
+═══════════════════════════════════ */
+.modal-overlay {
+  position:fixed;inset:0;z-index:500;
+  background:rgba(42,33,24,0.42);backdrop-filter:blur(7px);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity 0.4s var(--ease-slow);
+}
+.modal-overlay.open { opacity:1;pointer-events:all; }
+.modal-box {
+  background:var(--parchment);border-radius:28px;padding:52px 56px;
+  max-width:520px;width:92%;box-shadow:var(--sh-float);
+  border:1px solid rgba(232,222,206,0.9);
+  animation:scaleIn 0.45s var(--ease-elegant) forwards;
+  position:relative;
+}
+.modal-close { position:absolute;top:22px;right:26px;font-size:1.1rem;color:var(--ink-faint);cursor:pointer;background:none;border:none;transition:color 0.3s; }
+.modal-close:hover { color:var(--ink); }
+.modal-step { font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);margin-bottom:16px; }
+.modal-title { font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:300;color:var(--ink);margin-bottom:10px; }
+.modal-sub { font-size:0.875rem;line-height:1.75;color:var(--ink-faint);margin-bottom:32px; }
+
+.link-box {
+  background:var(--cream);border:1px solid var(--linen);border-radius:14px;
+  padding:14px 18px;display:flex;justify-content:space-between;align-items:center;
+  gap:12px;margin-bottom:18px;
+}
+.link-url { font-family:'DM Sans',sans-serif;font-size:0.78rem;color:var(--ink-soft);line-height:1.5;flex:1;letter-spacing:0.02em;word-break:break-all; }
+.copy-btn {
+  display:flex;align-items:center;gap:6px;
+  background:var(--blush);border:none;border-radius:9999px;
+  padding:8px 16px;cursor:pointer;flex-shrink:0;
+  font-family:'DM Sans',sans-serif;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;
+  color:var(--ink-soft);transition:all 0.3s var(--ease-slow);
+}
+.copy-btn:hover { background:var(--blush-deep);color:var(--ink); }
+.copy-btn.copied { background:#d4ddd0;color:var(--ink); }
+
+.share-row { display:flex;gap:10px;justify-content:center;margin-top:18px; }
+.share-btn { display:flex;align-items:center;gap:7px;padding:10px 20px;border-radius:9999px;border:1px solid var(--linen);background:transparent;font-family:'DM Sans',sans-serif;font-size:0.7rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-faint);cursor:pointer;transition:all 0.3s; }
+.share-btn:hover { border-color:var(--blush-deep);color:var(--ink-soft);background:rgba(240,220,216,0.12); }
+.modal-hint { font-size:0.75rem;color:var(--ink-faint);text-align:center;line-height:1.6;margin-top:22px; }
+.modal-hint span { color:var(--gold);cursor:pointer;border-bottom:1px solid rgba(184,154,106,0.3); }
+.modal-hint span:hover { border-bottom-color:var(--gold); }
+
+/* ═══════════════════════════════════
+   READING
+═══════════════════════════════════ */
+#screen-reading { overflow-y:auto; background:var(--parchment); padding-top:0; }
+.reading-nav {
+  position:fixed;top:0;left:0;right:0;z-index:300;height:68px;
+  display:flex;align-items:center;justify-content:space-between;padding:0 52px;
+  transition:background 0.5s,border-color 0.5s;
+}
+.reading-nav.solid { background:rgba(250,247,240,0.88);backdrop-filter:blur(20px);border-bottom:1px solid rgba(42,33,24,0.04); }
+.read-brand { font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.1rem;color:var(--gold);opacity:0.7; }
+.progress-rail { position:fixed;top:68px;left:0;right:0;z-index:299;height:1px; }
+.progress-bar { height:100%;width:0%;background:linear-gradient(to right,var(--blush-deep),var(--gold-light));transition:width 0.08s linear; }
+
+.reading-content { max-width:660px;margin:0 auto;padding:150px 40px 220px; }
+.reading-opener { text-align:center;margin-bottom:68px; }
+.read-eyebrow { font-size:0.625rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:18px; }
+.read-rule { width:48px;height:1px;background:linear-gradient(to right,transparent,var(--blush-deep),transparent);margin:0 auto; }
+
+.read-salutation { font-family:'Cormorant Garamond',serif;font-size:clamp(1.9rem,4vw,2.65rem);font-weight:300;line-height:1.18;color:var(--ink);margin-bottom:56px; animation:fadeUp 1s var(--ease-elegant) forwards; opacity:0; animation-delay:0.1s; }
+
+.read-p {
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(1.075rem,1.8vw,1.275rem);
+  line-height:1.98;color:var(--ink-soft);margin-bottom:44px;
+  opacity:0;transform:translateY(16px);
+  transition:opacity 0.95s var(--ease-elegant),transform 0.95s var(--ease-elegant);
+}
+.read-p.show { opacity:1;transform:translateY(0); }
+.read-p.indent { padding-left:44px; }
+
+.read-breath { display:flex;flex-direction:column;align-items:center;padding:36px 0;margin:8px 0; }
+.breath-line { width:1px;height:44px;background:linear-gradient(to bottom,var(--linen),transparent); }
+
+.read-sig { margin-top:64px;text-align:right;opacity:0;transform:translateY(16px);transition:opacity 0.95s var(--ease-elegant) 0.1s,transform 0.95s var(--ease-elegant) 0.1s; }
+.read-sig.show { opacity:1;transform:translateY(0); }
+.sig-phrase { font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.2rem;color:var(--ink-soft); }
+.sig-name   { font-family:'Cormorant Garamond',serif;font-size:2.2rem;font-weight:300;color:var(--ink);margin-top:6px; }
+.sig-date   { font-size:0.65rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink-faint);margin-top:14px;display:block; }
+
+.reading-bar {
+  position:fixed;bottom:36px;left:50%;transform:translateX(-50%);
+  display:flex;align-items:center;gap:14px;
+  background:rgba(250,247,240,0.93);backdrop-filter:blur(18px);
+  border:1px solid var(--linen);border-radius:9999px;
+  padding:10px 12px 10px 22px;box-shadow:var(--sh-float);white-space:nowrap;
+  animation:slideUp 0.6s var(--ease-elegant) 0.3s forwards;opacity:0;
+}
+.bar-text { font-size:0.725rem;letter-spacing:0.06em;color:var(--ink-faint); }
+
+/* ═══════════════════════════════════
+   NOT FOUND
+═══════════════════════════════════ */
+.not-found { flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;padding:80px 40px; }
+.not-found h2 { font-family:'Cormorant Garamond',serif;font-size:2.5rem;font-weight:300;color:var(--ink); }
+.not-found p  { font-size:0.9rem;line-height:1.8;color:var(--ink-faint);max-width:380px; }
+</style>
+</head>
+<body>
+
+<!-- ─── Main Nav (hidden on reading) ─── -->
+<nav id="main-nav">
+  <div class="nav-brand" onclick="go('landing')">The Archive</div>
+  <div class="nav-links">
+    <span class="nav-link" id="nl-landing" onclick="go('landing')">Our Story</span>
+    <span class="nav-link" id="nl-gallery" onclick="go('gallery')">The Gallery</span>
+    <span class="nav-link" id="nl-compose" onclick="go('compose')">Write a Letter</span>
+  </div>
+  <div style="width:80px"></div>
+</nav>
+
+<!-- ═══════════════════════════════════
+     LANDING
+═══════════════════════════════════ -->
+<div id="screen-landing" class="screen">
+  <section class="hero">
+    <div class="hero-glow g1"></div>
+    <div class="hero-glow g2"></div>
+    <div class="hero-glow g3"></div>
+    <p class="hero-eyebrow fi">The Ephemeral Archive</p>
+    <h1 class="t-display hero-title fu d1">Say what words alone<br/><em>cannot.</em></h1>
+    <p class="hero-sub fu d2">Write a letter. Get a link. Share it with one person. They open it and it unfolds before them — no app, no account, just words.</p>
+    <div class="hero-cta fu d3">
+      <button class="btn btn-primary" onclick="go('compose')">
+        Begin Your Letter
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 6h10M6 1l5 5-5 5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="btn btn-ghost" onclick="go('gallery')">See an Example</button>
+    </div>
+    <div class="hero-scroll fi d5"><span>Explore</span></div>
+  </section>
+
+  <div class="features sr">
+    <div class="feat">
+      <div class="feat-icon">✦</div>
+      <div class="feat-title">No account needed</div>
+      <p class="feat-desc">Write and instantly receive a shareable link. Nothing to install, nothing to sign in to.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">◈</div>
+      <div class="feat-title">An immersive read</div>
+      <p class="feat-desc">Your reader opens the link and the letter unfolds as they scroll — quiet, personal, beautiful.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">◇</div>
+      <div class="feat-title">Private by nature</div>
+      <p class="feat-desc">Letters live only in your browser. Only those with the link can read it.</p>
+    </div>
+  </div>
+
+  <div class="teaser sr">
+    <div class="teaser-text">
+      <h2 class="t-display">A letter lives<br/>longer than<br/>a message.</h2>
+      <p>Every word is a choice. Every pause, intentional. This is not messaging. This is correspondence.</p>
+      <button class="btn btn-primary" onclick="go('compose')">
+        Write Now
+        <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M1 6h10M6 1l5 5-5 5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="teaser-card paper">
+      <div>
+        <p class="tc-date">October 14, 2024</p>
+        <p class="tc-sal">My dearest friend,</p>
+        <p class="tc-body">I found myself walking through the old gardens today — the ones we used to visit before the city grew so loud. The air still holds that quiet dampness we both loved…</p>
+      </div>
+      <p class="tc-sig">Yours, always,<br/>E.</p>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-brand">The Archive</div>
+    <div class="footer-links">
+      <span class="footer-link">Privacy</span>
+      <span class="footer-link">Ethical Design</span>
+      <span class="footer-link">Support</span>
+    </div>
+    <p class="footer-copy">© 2024 The Ephemeral Archive</p>
+  </footer>
+</div>
+
+<!-- ═══════════════════════════════════
+     GALLERY (example letter)
+═══════════════════════════════════ -->
+<div id="screen-gallery" class="screen" style="padding-top:68px;background:var(--parchment);">
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 40px;text-align:center;gap:20px;">
+    <span style="font-size:0.625rem;letter-spacing:0.22em;color:var(--gold);text-transform:uppercase;">An example</span>
+    <h2 class="t-display" style="font-size:3rem;color:var(--ink);">The Gallery</h2>
+    <p style="color:var(--ink-faint);max-width:400px;line-height:1.82;font-size:0.9rem;">Below is how a letter feels when your reader opens their link — a quiet, immersive scroll through your words.</p>
+    <button class="btn btn-primary" onclick="showExample()">
+      Read an Example Letter
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 6h10M6 1l5 5-5 5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button class="btn btn-ghost" onclick="go('compose')" style="margin-top:4px;">Write Your Own →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════
+     COMPOSE
+═══════════════════════════════════ -->
+<div id="screen-compose" class="screen" style="padding-top:68px;background:var(--parchment);">
+  <div class="compose-wrap">
+    <div class="compose-head fu">
+      <h1>Your Letter</h1>
+      <p>Write freely. Everything else falls away.</p>
+    </div>
+
+    <div class="prompts fu d1">
+      <button class="prompt-chip" onclick="addPrompt(this)">What you love about them</button>
+      <button class="prompt-chip" onclick="addPrompt(this)">A quiet memory shared</button>
+      <button class="prompt-chip" onclick="addPrompt(this)">What you've never said aloud</button>
+      <button class="prompt-chip" onclick="addPrompt(this)">A wish for their future</button>
+    </div>
+
+    <div class="writing-canvas paper fu d2">
+      <div class="canvas-meta">
+        <span class="canvas-date" id="compose-date"></span>
+        <span class="draft-pill"><span class="draft-dot"></span>Autosaved</span>
+      </div>
+      <textarea id="f-title" class="f-title" placeholder="Dear ________," rows="1"
+        oninput="autoH(this);syncCount();autosave();"></textarea>
+      <textarea id="f-body"  class="f-body"
+        placeholder="Begin here. There is no right way to start…"
+        oninput="syncCount();autosave();"></textarea>
+      <div class="canvas-foot">
+        <span class="word-count" id="word-count">0 words</span>
+      </div>
+    </div>
+
+    <div class="compose-actions fu d3">
+      <button class="btn btn-ghost" onclick="go('landing')">← Back</button>
+      <button class="btn btn-dark" id="seal-btn" onclick="sealLetter()">
+        Seal &amp; Get Link
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 2C4.239 2 2 4.239 2 7s2.239 5 5 5 5-2.239 5-5" stroke="currentColor" stroke-width="1.15" stroke-linecap="round"/><path d="M9 1l3 3-3 3M12 4H7.5" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════
+     SEAL MODAL
+═══════════════════════════════════ -->
+<div class="modal-overlay" id="seal-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div style="font-size:1.8rem;margin-bottom:18px;">✉</div>
+    <p class="modal-step">Your letter is sealed</p>
+    <h2 class="modal-title">Ready to share.</h2>
+    <p class="modal-sub">Anyone with this link will experience your letter in a quiet, immersive reading view — no account needed, no distractions.</p>
+
+    <div class="link-box">
+      <span class="link-url" id="generated-url"></span>
+      <button class="copy-btn" id="copy-btn" onclick="copyLink()">
+        <svg width="11" height="11" viewBox="0 0 14 14" fill="none"><rect x="4" y="4" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M2 10V2h8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        Copy Link
+      </button>
+    </div>
+
+    <div class="share-row">
+      <button class="share-btn" onclick="shareNative()">
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><circle cx="10.5" cy="2.5" r="1.5" stroke="currentColor" stroke-width="1.1"/><circle cx="10.5" cy="11.5" r="1.5" stroke="currentColor" stroke-width="1.1"/><circle cx="3.5" cy="7" r="1.5" stroke="currentColor" stroke-width="1.1"/><path d="M5 6.1l4-2.2M5 7.9l4 2.2" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
+        Share
+      </button>
+      <button class="share-btn" onclick="previewLetter()">
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M1 7s2-4 6-4 6 4 6 4-2 4-6 4-6-4-6-4z" stroke="currentColor" stroke-width="1.1"/><circle cx="7" cy="7" r="1.5" stroke="currentColor" stroke-width="1.1"/></svg>
+        Preview
+      </button>
+    </div>
+
+    <p class="modal-hint">
+      Letters are stored in your browser. 
+      <span onclick="closeModal();go('compose')">Edit your letter</span>
+    </p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════
+     READING
+═══════════════════════════════════ -->
+<div id="screen-reading" class="screen" style="overflow-y:auto;">
+  <div class="reading-nav" id="reading-nav">
+    <span class="read-brand">The Archive</span>
+    <div id="reading-nav-btns"></div>
+  </div>
+  <div class="progress-rail"><div class="progress-bar" id="read-progress"></div></div>
+  <div class="reading-content" id="reading-content"></div>
+  <div class="reading-bar" id="reading-bar">
+    <span class="bar-text" id="bar-text">From The Ephemeral Archive</span>
+    <div id="bar-btns"></div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════
+   STORAGE
+═══════════════════════════════════ */
+const STORE = 'ephemeral_v1';
+
+function getAllLetters() {
+  try { return JSON.parse(localStorage.getItem(STORE) || '{}'); } catch { return {}; }
+}
+function saveLetter(id, data) {
+  const all = getAllLetters();
+  all[id] = data;
+  try { localStorage.setItem(STORE, JSON.stringify(all)); } catch(e) {}
+}
+function getLetter(id) {
+  return getAllLetters()[id] || null;
+}
+
+/* ═══════════════════════════════════
+   URL / HASH
+═══════════════════════════════════ */
+function buildUrl(id) {
+  const base = window.location.origin + window.location.pathname;
+  return base + '#letter=' + id;
+}
+function parseHash() {
+  const h = window.location.hash;
+  if (h.startsWith('#letter=')) return decodeURIComponent(h.slice(8));
+  return null;
+}
+
+/* ═══════════════════════════════════
+   ROUTER
+═══════════════════════════════════ */
+function go(name) {
+  document.querySelectorAll('.screen').forEach(s => { s.classList.remove('active'); s.style.display = 'none'; });
+  ['nl-landing','nl-gallery','nl-compose'].forEach(id => document.getElementById(id)?.classList.remove('active'));
+
+  // Show/hide nav
+  const noNav = (name === 'reading');
+  document.getElementById('main-nav').classList.toggle('hidden-nav', noNav);
+
+  if (name === 'landing') { document.getElementById('nl-landing')?.classList.add('active'); }
+  if (name === 'gallery') { document.getElementById('nl-gallery')?.classList.add('active'); }
+  if (name === 'compose') { document.getElementById('nl-compose')?.classList.add('active'); }
+
+  if (name === 'reading') {
+    const id = parseHash();
+    const data = id ? getLetter(id) : null;
+    renderReading(data, false);
+    return;
+  }
+
+  const el = document.getElementById('screen-' + name);
+  if (el) { el.classList.add('active'); el.style.display = 'flex'; window.scrollTo(0,0); }
+
+  if (name === 'landing') initScrollReveal();
+  if (name === 'compose') initCompose();
+}
+
+/* ═══════════════════════════════════
+   SEAL FLOW
+═══════════════════════════════════ */
+let activeLetterId = null;
+
+function sealLetter() {
+  const title = (document.getElementById('f-title')?.value || '').trim();
+  const body  = (document.getElementById('f-body')?.value  || '').trim();
+
+  if (!title && !body) {
+    const btn = document.getElementById('seal-btn');
+    btn.style.transition = 'transform 0.08s';
+    [0,80,160,240].forEach((t,i) => setTimeout(() => { btn.style.transform = i%2===0?'translateX(-5px)':'translateX(5px)'; }, t));
+    setTimeout(() => { btn.style.transform=''; }, 280);
+    return;
+  }
+
+  const id = 'l_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,7);
+  const data = {
+    title, body,
+    date: new Date().toLocaleDateString('en-GB', {day:'numeric',month:'long',year:'numeric'}),
+    sealed: true
+  };
+  saveLetter(id, data);
+  activeLetterId = id;
+
+  const url = buildUrl(id);
+  document.getElementById('generated-url').textContent = url;
+  resetCopyBtn();
+  openModal();
+}
+
+function previewLetter() {
+  closeModal();
+  if (!activeLetterId) return;
+  const data = getLetter(activeLetterId);
+  renderReading(data, true);
+}
+
+function copyLink() {
+  const url = document.getElementById('generated-url').textContent;
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.innerHTML = '✓&nbsp; Copied!';
+    btn.classList.add('copied');
+    setTimeout(resetCopyBtn, 2800);
+  }).catch(() => {
+    // Fallback selection
+    const el = document.getElementById('generated-url');
+    const r = document.createRange(); r.selectNodeContents(el);
+    const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+  });
+}
+
+function resetCopyBtn() {
+  const btn = document.getElementById('copy-btn');
+  if (!btn) return;
+  btn.classList.remove('copied');
+  btn.innerHTML = `
+    <svg width="11" height="11" viewBox="0 0 14 14" fill="none">
+      <rect x="4" y="4" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.2"/>
+      <path d="M2 10V2h8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+    </svg>
+    Copy Link`;
+}
+
+function shareNative() {
+  const url = document.getElementById('generated-url').textContent;
+  if (navigator.share) {
+    navigator.share({ title: 'A letter for you — The Ephemeral Archive', url })
+      .catch(() => copyLink());
+  } else {
+    copyLink();
+  }
+}
+
+function openModal()  { document.getElementById('seal-modal').classList.add('open'); }
+function closeModal() { document.getElementById('seal-modal').classList.remove('open'); }
+document.getElementById('seal-modal').addEventListener('click', e => {
+  if (e.target.id === 'seal-modal') closeModal();
+});
+
+/* ═══════════════════════════════════
+   READING RENDERER
+═══════════════════════════════════ */
+function renderReading(data, isPreview) {
+  const screen = document.getElementById('screen-reading');
+  screen.classList.add('active');
+  screen.style.display = 'flex';
+  screen.scrollTop = 0;
+  document.getElementById('main-nav').classList.add('hidden-nav');
+
+  let title, body, dateStr;
+
+  if (isPreview && activeLetterId) {
+    const d = getLetter(activeLetterId);
+    title = d?.title || ''; body = d?.body || ''; dateStr = d?.date || '';
+  } else if (data) {
+    title = data.title || ''; body = data.body || ''; dateStr = data.date || '';
+  } else {
+    // Not found
+    const content = document.getElementById('reading-content');
+    content.innerHTML = `
+      <div class="not-found">
+        <h2 class="t-display">Letter not found.</h2>
+        <p>This letter may have been removed or the link is incorrect. Only the author's browser holds the letter — if they've cleared their data, it's gone forever.</p>
+        <button class="btn btn-primary" onclick="go('landing')">Return Home</button>
+      </div>`;
+    // Nav/bar for not-found
+    document.getElementById('reading-nav-btns').innerHTML = '';
+    document.getElementById('bar-text').textContent = 'The Ephemeral Archive';
+    document.getElementById('bar-btns').innerHTML = `<button class="btn btn-dark" style="padding:9px 22px;" onclick="go('compose')">Write a Letter</button>`;
+    return;
+  }
+
+  // Split body into paragraphs
+  const paragraphs = body.split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
+  if (!paragraphs.length) paragraphs.push('');
+
+  const content = document.getElementById('reading-content');
+  content.innerHTML = `
+    <div class="reading-opener">
+      <span class="read-eyebrow">A letter for you</span>
+      <div class="read-rule"></div>
+    </div>
+    <div class="read-salutation">${esc(title || 'My dearest,')}</div>
+    ${paragraphs.map((p, i) => `
+      <p class="read-p${i % 3 === 1 ? ' indent' : ''}" data-delay="${Math.min(i * 70, 400)}">${esc(p)}</p>
+    `).join('')}
+    <div class="read-breath"><div class="breath-line"></div></div>
+    <div class="read-sig">
+      <p class="sig-phrase">Yours, always,</p>
+      ${dateStr ? `<span class="sig-date">${esc(dateStr)}</span>` : ''}
+    </div>
+  `;
+
+  // Nav buttons
+  document.getElementById('reading-nav-btns').innerHTML = isPreview
+    ? `<button class="btn btn-ghost" style="font-size:0.7rem;padding:9px 18px;" onclick="backToCompose()">← Edit</button>`
+    : '';
+
+  // Bottom bar
+  document.getElementById('bar-text').textContent = isPreview ? 'Preview mode' : 'From The Ephemeral Archive';
+  document.getElementById('bar-btns').innerHTML = isPreview
+    ? `<button class="btn btn-ghost" style="font-size:0.65rem;padding:8px 16px;" onclick="backToCompose()">Edit</button>
+       <button class="btn btn-dark"  style="padding:9px 22px;" onclick="closeModal();openModal()">Get Link</button>`
+    : `<button class="btn btn-dark" style="padding:9px 22px;" onclick="go('compose')">Write Your Own</button>`;
+
+  // Intersection observer for scroll reveals
+  setTimeout(() => {
+    const els = content.querySelectorAll('.read-p, .read-sig');
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          const delay = parseInt(e.target.dataset.delay || 0);
+          setTimeout(() => e.target.classList.add('show'), delay);
+          obs.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.15, rootMargin: '-20px 0px' });
+    els.forEach(el => obs.observe(el));
+  }, 120);
+
+  // Scroll handler for progress + nav
+  screen.onscroll = null;
+  screen.addEventListener('scroll', () => {
+    const total = screen.scrollHeight - screen.clientHeight;
+    const pct   = total > 0 ? (screen.scrollTop / total) * 100 : 0;
+    const bar   = document.getElementById('read-progress');
+    const nav   = document.getElementById('reading-nav');
+    if (bar) bar.style.width = pct + '%';
+    if (nav) nav.classList.toggle('solid', screen.scrollTop > 30);
+  }, { passive: true });
+}
+
+function backToCompose() {
+  document.getElementById('screen-reading').classList.remove('active');
+  document.getElementById('screen-reading').style.display = 'none';
+  document.getElementById('main-nav').classList.remove('hidden-nav');
+  const el = document.getElementById('screen-compose');
+  el.classList.add('active'); el.style.display = 'flex';
+  document.getElementById('nl-compose')?.classList.add('active');
+  window.scrollTo(0,0);
+}
+
+/* ═══════════════════════════════════
+   GALLERY EXAMPLE
+═══════════════════════════════════ */
+function showExample() {
+  // Store a demo letter temporarily
+  const id = 'demo_example';
+  saveLetter(id, {
+    title: 'My dearest friend,',
+    body: `I write this to you as the rain traces unpredictable paths down the study window. There is a quietness here today that feels almost profound — a hushed atmosphere that demands reflection rather than action.
+
+Do you remember that afternoon in late September? The way the autumn light fell through the yellowing leaves, casting long, fractured shadows across the stone path. I often return to that memory when the present feels too loud. It remains perfectly preserved in my mind — an heirloom untouched by the years.
+
+The world outside seems to rush forward with an urgency I can no longer understand. In the rush, I seek the stillness we once shared. I have taken to walking the paths we used to wander, trying to trace the invisible lines of our shared history.
+
+I write this not with the expectation of a reply, but simply to release these thoughts from the confinement of my own heart. They belong to you, as they always have. May this letter find you in a place of peace, surrounded by the warmth you so effortlessly give to others.`,
+    date: 'October 14, 2024',
+    sealed: true
+  });
+  renderReading(getLetter(id), false);
+  // Add a "write your own" note to the bar
+  document.getElementById('bar-text').textContent = 'Example letter';
+  document.getElementById('bar-btns').innerHTML = `
+    <button class="btn btn-ghost" style="font-size:0.65rem;padding:8px 16px;" onclick="go('gallery')">← Back</button>
+    <button class="btn btn-dark" style="padding:9px 22px;" onclick="go('compose')">Write Your Own</button>`;
+}
+
+/* ═══════════════════════════════════
+   COMPOSE HELPERS
+═══════════════════════════════════ */
+let draftId = null;
+
+function initCompose() {
+  const el = document.getElementById('compose-date');
+  if (el) el.textContent = new Date().toLocaleDateString('en-GB', {day:'numeric',month:'long',year:'numeric'});
+  syncCount();
+}
+
+function autoH(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
+function syncCount() {
+  const t = document.getElementById('f-title')?.value || '';
+  const b = document.getElementById('f-body')?.value  || '';
+  const w = (t + ' ' + b).trim().split(/\s+/).filter(Boolean).length;
+  const el = document.getElementById('word-count');
+  if (el) el.textContent = w + (w === 1 ? ' word' : ' words');
+}
+
+function autosave() {
+  if (!draftId) draftId = 'draft_' + Date.now().toString(36);
+  saveLetter(draftId, {
+    title: document.getElementById('f-title')?.value || '',
+    body:  document.getElementById('f-body')?.value  || '',
+    date:  new Date().toLocaleDateString('en-GB', {day:'numeric',month:'long',year:'numeric'}),
+    isDraft: true
+  });
+}
+
+function addPrompt(chip) {
+  const b = document.getElementById('f-body');
+  if (!b) return;
+  const t = chip.textContent.trim();
+  b.value += (b.value ? '\n\n' : '') + t + '… ';
+  b.focus(); syncCount(); autosave();
+}
+
+/* ═══════════════════════════════════
+   SCROLL REVEAL (landing)
+═══════════════════════════════════ */
+function initScrollReveal() {
+  const els = document.querySelectorAll('#screen-landing .sr');
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('vis'); obs.unobserve(e.target); } });
+  }, { threshold: 0.12 });
+  els.forEach(el => obs.observe(el));
+}
+
+/* ═══════════════════════════════════
+   UTILS
+═══════════════════════════════════ */
+function esc(str) {
+  return (str || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* ═══════════════════════════════════
+   BOOT
+═══════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  const id = parseHash();
+  if (id) {
+    const data = getLetter(id);
+    renderReading(data, false);
+  } else {
+    go('landing');
+  }
+});
+
+window.addEventListener('hashchange', () => {
+  const id = parseHash();
+  if (id) {
+    const data = getLetter(id);
+    renderReading(data, false);
+  }
+});
+</script>
+</body>
+</html>
